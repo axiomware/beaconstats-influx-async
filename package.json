@@ -1,0 +1,38 @@
+{
+  "name": "beaconstats-influx-async",
+  "version": "1.0.0",
+  "description": "Collect Bluetooth Advertisement data and store in InfluxDB",
+  "main": "appBeaconScanAsync.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/axiomware/beaconstats-influx-async.git"
+  },
+  "keywords": [
+    "Bluetooth",
+    "Beacons"
+  ],
+  "author": "Axiomware Systems Inc <swdev@axiomware.com> (http://www.axiomware.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/axiomware/beaconstats-influx-async/issues"
+  },
+  "homepage": "https://github.com/axiomware/beaconstats-influx-async#readme",
+  "dependencies": {
+    "chalk": "^2.3.0",
+    "clui": "^0.3.6",
+    "figlet": "^1.2.0",
+    "influx": "^5.0.7",
+    "inquirer": "^5.0.1",
+    "json5": "^1.0.1",
+    "netrunr-gapi": "^1.1.5",
+    "netrunr-gapi-async": "^1.0.1",
+    "preferences": "^1.0.2",
+    "terminal-kit": "^1.14.3"
+  }
+}

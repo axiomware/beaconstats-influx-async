@@ -1,0 +1,18 @@
+{
+  "devList": [
+    "C2:00:2E:00:01:4B", //nBeacon Q1
+    "C2:00:2E:00:01:4C", //nBeacon Q1
+    "C2:00:2E:00:01:4D", //nBeacon Q1
+    "C2:00:2E:00:01:4E", //nBeacon Q1
+    "C2:00:2E:00:01:4F", //nBeacon Q1
+    "C2:00:2E:00:01:50", //nBeacon Q1
+    "C2:00:2E:00:01:51", //nBeacon Q1
+    "C2:00:2E:00:01:52", //nBeacon Q1
+    "C2:00:2E:00:00:62", //nBeacon Q1
+    "C2:00:2E:00:00:63", //nBeacon Q1
+    "C2:00:2E:00:01:E0", //nBeacon Q1
+    "C2:00:2E:00:00:EF", //nBeacon Q1
+    "88:6B:0F:2B:53:ce", //mILWAUKEE TICK
+    "CF:A9:58:E0:6E:4F" //Confidex Viking
+  ]
+}
