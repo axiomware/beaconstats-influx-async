@@ -81,13 +81,13 @@ async function main() {
             else
                 await axShutdown(3, 'File does not exist... ' + advFilterFileName);//Error - exit
         }
-        
+
         for (let i = 0; i < gwidList.length; i++) {
             gwArray[i] = new multiGW(cred.user, cred.pwd, gwidList[i]);//create an instance of netrunr object for each gateway
             mainLogin(gwArray[i]);
         }
-        statusList.start();
-        displayScanResults(1500);
+        //statusList.start();
+        //displayScanResults(1500);
     } catch (err) {
         await axShutdown(3, 'Error! Exiting... ' + JSON.stringify(err, Object.getOwnPropertyNames(err)));//Error - exit
     }
@@ -176,10 +176,11 @@ function myGatewayReportHandler(gwObj, iobj) {
             gwObj.advRate = iobj.nodes.length;
             var advArray = axAddGWIDInfo(gwObj, iobj.nodes); //add gateway info
             var advFilter = advArray.filter(advMacIDFilter)
-            var advArrayMap = advArray.map(axAdvExtractData);//Extract data
+            //var advArrayMap = advFilter.map(axAdvExtractData);//Extract data
+            var advArrayMap = advFilter.map(axIBeaconExtractData);//Extract data
             writeAdvDataToInflux(gwObj.gwid, advFilter, gwObj.advRate);
             //var advPrnArray = axParseAdv(gwObj, iobj.nodes);
-            //axPrintAdvArrayScreen(advPrnArray);//Print data to screen 
+            axPrintAdvArrayScreen(advArrayMap);//Print data to screen 
             break;
         case 27://Notification report
             console.log('Notification received: ' + JSON.stringify(iobj, null, 0))
@@ -463,7 +464,7 @@ influx.getDatabaseNames()
  * @param {String} advObj - Array of advertisements
  */
 function writeAdvDataToInflux(gwid, advObj, advRate) {
-    if (influxDB_OK){
+    if (influxDB_OK) {
         for (var i = 0; i < advObj.length; i++) {
             writeAdvDataToInfluxDataPoint({
                 gwid: gwid,
@@ -565,4 +566,48 @@ function displayScanResults(delay_ms) {
         statusList.message(statStr);
         setTimeout(displayScanResults, delay_ms, delay_ms);
     }
+}
+
+/**
+ * Function toExtract iBeacon data
+ * 
+ * @param {any} advItem 
+ * @returns {boolean} - true if advertsiment has to be retained
+ */
+function axIBeaconExtractData(advItem) {
+    let beaconData = {}
+    beaconData.ts = myUtils.convertUnixTimeToDateTime(advItem.tss + 1e-6 * advItem.tsus);
+    beaconData.gw = advItem.gw;
+    beaconData.did = advItem.did;
+    beaconData.dt = advItem.dt;
+    beaconData.ev = advItem.ev;
+    beaconData.rssi = advItem.rssi;
+    beaconData.name = advItem.name;
+    for (let i = 0; i < advItem.adv.length; i++) {
+        if (advItem.adv[i].t == 255) {
+            if (advItem.adv[i].v.length == 50) {
+                const buf = Buffer.from(advItem.adv[i].v, 'hex');
+                beaconData.manuf = decimalToHex(buf.readUInt16LE(0), 4);//Little-endian 16-bit to unsigned integer - Temperature
+                beaconData.type = decimalToHex(buf.readUInt8(2), 2);//Little-endian 16-bit to unsigned integer - Temperature
+                beaconData.len = decimalToHex(buf.readUInt8(3), 2);//Little-endian 16-bit to unsigned integer - Temperature
+                beaconData.UID = advItem.adv[i].v.slice(8, 40);
+                beaconData.major = decimalToHex(buf.readUInt16BE(20), 4);//Little-endian 16-bit to unsigned integer - Temperature
+                beaconData.minor = decimalToHex(buf.readUInt16BE(22), 4);//Little-endian 16-bit to unsigned integer - Temperature
+                beaconData.cal_rssi = buf.readInt8(24);//Little-endian 16-bit to unsigned integer - Temperature
+            }
+        }
+    }
+    //console.log(JSON.stringify(beaconData))
+    return beaconData;
+}
+
+function decimalToHex(d, padding) {
+    var hex = Number(d).toString(16);
+    padding = typeof (padding) === "undefined" || padding === null ? padding = 2 : padding;
+
+    while (hex.length < padding) {
+        hex = "0" + hex;
+    }
+
+    return hex;
 }

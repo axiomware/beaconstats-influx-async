@@ -4,6 +4,8 @@ var clc = require('cli-color');
 const Influx = require('influx');
 var myUtils = require('./lib/lib-generic-utils.js');
 
+var influxDB_OK = true;
+
 
 
 var Line = CLI.Line,
@@ -14,44 +16,65 @@ const influx = new Influx.InfluxDB({
     database: 'beaconstats'
 });
 
+/**
+ * Check if database exists. Create if it does not exist
+ * 
+ */
+influx.getDatabaseNames()
+    .then(names => {
+        if (!names.includes('beaconstats')) {
+            influxDB_OK = false;
+            console.log('No InfluxDB found... Exiting!')
+            process.exit(1);
+            return false;
+        }
+    })
+    .catch(error => {
+        console.log('No InfluxDB found... Exiting!')
+        process.exit(1);
+        influxDB_OK = false
+    });
+
 setInterval(getInfluxData, 2600);
 //getInfluxData();
 
 async function getInfluxData() {
-    try {
-        var dispData = {
-            msg: "Press CTRL-C to Exit",
-            gw: [],
-            data: {}
-        };
-        
-        var ifql5 = `select rssi  from raw_adv group by * order by desc limit 1`;
-        var ifql6 = `select count(rssi)  from raw_adv group by *`;
-        
-        var nodeVal5 = await influx.query(ifql5)
-        var nodeVal6 = await influx.query(ifql6)
-        //console.log(JSON.stringify(nodeVal5));
-        for (let i = 0; i < nodeVal5.length; i++) {
-            dispData.gw.indexOf(nodeVal5[i].gwid) === -1 ? dispData.gw.push(nodeVal5[i].gwid) : 0;
-            var cTime = Date.now();
-            var tDiff = cTime - nodeVal5[i].time.getTime()
-            if (!dispData.data.hasOwnProperty(nodeVal5[i].macid)) {
-                dispData.data[nodeVal5[i].macid] = {}
-            }
-            if (!dispData.data[nodeVal5[i].macid].hasOwnProperty(nodeVal5[i].gwid)) {
-                dispData.data[nodeVal5[i].macid][nodeVal5[i].gwid] = { exist: true, rssi: nodeVal5[i].rssi, etime: tDiff / 1000, count: 0 };
-            }
-        }
-        for (let i = 0; i < nodeVal6.length; i++) {
-            if (dispData.data.hasOwnProperty(nodeVal6[i].macid)) {
-                if (dispData.data[nodeVal6[i].macid].hasOwnProperty(nodeVal6[i].gwid)) {
-                    dispData.data[nodeVal6[i].macid][nodeVal6[i].gwid].count = nodeVal6[i].count;;
+    if (influxDB_OK) {
+        try {
+            var dispData = {
+                msg: "Press CTRL-C to Exit",
+                gw: [],
+                data: {}
+            };
+
+            var ifql5 = `select rssi  from raw_adv group by * order by desc limit 1`;
+            var ifql6 = `select count(rssi)  from raw_adv group by *`;
+
+            var nodeVal5 = await influx.query(ifql5)
+            var nodeVal6 = await influx.query(ifql6)
+            //console.log(JSON.stringify(nodeVal5));
+            for (let i = 0; i < nodeVal5.length; i++) {
+                dispData.gw.indexOf(nodeVal5[i].gwid) === -1 ? dispData.gw.push(nodeVal5[i].gwid) : 0;
+                var cTime = Date.now();
+                var tDiff = cTime - nodeVal5[i].time.getTime()
+                if (!dispData.data.hasOwnProperty(nodeVal5[i].macid)) {
+                    dispData.data[nodeVal5[i].macid] = {}
+                }
+                if (!dispData.data[nodeVal5[i].macid].hasOwnProperty(nodeVal5[i].gwid)) {
+                    dispData.data[nodeVal5[i].macid][nodeVal5[i].gwid] = { exist: true, rssi: nodeVal5[i].rssi, etime: tDiff / 1000, count: 0 };
                 }
             }
+            for (let i = 0; i < nodeVal6.length; i++) {
+                if (dispData.data.hasOwnProperty(nodeVal6[i].macid)) {
+                    if (dispData.data[nodeVal6[i].macid].hasOwnProperty(nodeVal6[i].gwid)) {
+                        dispData.data[nodeVal6[i].macid][nodeVal6[i].gwid].count = nodeVal6[i].count;;
+                    }
+                }
+            }
+            printData(dispData)
+        } catch (err) {
+            console.log('Error! Exiting... ' + JSON.stringify(err, Object.getOwnPropertyNames(err)));
         }
-        printData(dispData)
-    } catch (err) {
-        console.log('Error! Exiting... ' + JSON.stringify(err, Object.getOwnPropertyNames(err)));
     }
 
 }
